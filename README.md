@@ -1,1 +1,1 @@
-# Match3
+# MatchGame
