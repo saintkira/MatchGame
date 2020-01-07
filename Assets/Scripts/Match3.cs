@@ -5,16 +5,25 @@ using UnityEngine;
 public class Match3 : MonoBehaviour
 {
     public ArrayLayout boardLayout;
+    [Header("UI Elements")]
     public Sprite[] pieces;
+    public RectTransform gameBoard;
+    [Header("Prefabs")]
+    public GameObject nodePiece;
+
+
+
     Node[,] board;
     int width = 9;
     int height = 14;
     System.Random random;
 
+
+
     // Start is called before the first frame update
     void Start()
     {
-
+        StartGame();
     }
 
     void StartGame()
@@ -22,6 +31,8 @@ public class Match3 : MonoBehaviour
         string seed = getRandomSeed();
         random = new System.Random(seed.GetHashCode());
         InitializeBoard();
+        VerifyBoard();
+        InstantiateBoard();
     }
 
     void InitializeBoard() //khoi tao board game va random value tren bang tu tren xuong duoi tu trai qua phai
@@ -42,6 +53,7 @@ public class Match3 : MonoBehaviour
 
     void VerifyBoard()// kiem tra neu board khi khoi tao ma da co match => renew lai
     {
+        List<int> remove;
         for (int x = 0; x < width; x++)
         {
             for (int y = 0; y < height; y++)
@@ -52,6 +64,16 @@ public class Match3 : MonoBehaviour
                 {
                     continue;
                 }
+                remove = new List<int>();
+                while (isConnected(p, true).Count > 0)
+                {
+                    value = getValueAtPoint(p);
+                    if (!remove.Contains(value))// check neu value la mot match thi phai remove no khoi list random
+                    {
+                        remove.Add(value);
+                    }
+                    setValueAtPoint(p, newValue(ref remove)); //add 1 value moi vao pieces khong co la value match
+                }
 
             }
 
@@ -59,6 +81,24 @@ public class Match3 : MonoBehaviour
 
     }
 
+    //create all the pieces
+    void InstantiateBoard()
+    {
+        for (int x = 0; x < width; x++)
+        {
+            for (int y = 0; y < height; y++)
+            {
+                int val = board[x, y].value;
+                if (val <= 0)
+                {
+                    continue;
+                }
+                GameObject p = Instantiate(nodePiece, gameBoard);
+                RectTransform rect = p.GetComponent<RectTransform>();
+                rect.anchoredPosition = new Vector2(32 + (64 * x), -32 - (64 * y));
+            }
+        }
+    }
     List<Point> isConnected(Point p, bool main)// neu la mot match thi tat ca se bo vao  List de follow
     {
         List<Point> connected = new List<Point>();
@@ -119,11 +159,11 @@ public class Match3 : MonoBehaviour
             List<Point> square = new List<Point>();
             int same = 0;
             int next = i + 1;
-            if(next >=4)
+            if (next >= 4)
             {
-                next -=4;
+                next -= 4;
             }
-            Point[] check = 
+            Point[] check =
             {
                 Point.add(p,directions[i]),
                 Point.add(p,directions[next]),
@@ -131,25 +171,30 @@ public class Match3 : MonoBehaviour
             };
             foreach (Point dir in check)
             {
-                if(getValueAtPoint(dir)==value)
+                if (getValueAtPoint(dir) == value)
                 {
                     square.Add(dir);
-                    same ++;
+                    same++;
                 }
-                
+
             }
-            if(same>2)
+            if (same > 2)
             {
                 AddPoints(ref connected, square);
             }
-            
+
         }
-        if(main)
+        if (main)
         {
             for (int i = 0; i < connected.Count; i++)
             {
-                AddPoints(ref connected, isConnected(connected[i],false));
+                AddPoints(ref connected, isConnected(connected[i], false));
             }
+        }
+
+        if (connected.Count > 0)
+        {
+            connected.Add(p);
         }
 
         return connected;
@@ -157,7 +202,24 @@ public class Match3 : MonoBehaviour
 
     void AddPoints(ref List<Point> points, List<Point> add)// add mot list co cac piece match vao mot list connected
     {
+        foreach (Point p in add)
+        {
+            bool doAdd = true;
+            for (int i = 0; i < points.Count; i++)
+            {
+                if(points[i].Equals(p))
+                {
+                    doAdd = false;
+                    break;
+                }       
+            }
 
+            if(doAdd)
+            {
+                points.Add(p);
+            }
+
+        }
     }
     int fillPieces()
     {
@@ -169,7 +231,32 @@ public class Match3 : MonoBehaviour
 
     int getValueAtPoint(Point p)// lay gia tri tat mot toa do X Y tren boardLayout
     {
+        if (p.x < 0 || p.x >= width || p.y < 0 || p.y >= height) return -1; //de dam bao no k bi out of range
         return board[p.x, p.y].value;
+    }
+
+    void setValueAtPoint(Point p, int v)
+    {
+        board[p.x, p.y].value = v;
+    }
+
+    int newValue(ref List<int> remove)
+    {
+        List<int> available = new List<int>();
+        for (int i = 0; i < pieces.Length; i++)
+        {
+            available.Add(i + 1);
+        }
+        foreach (int item in remove)
+        {
+            available.Remove(item);
+        }
+
+        if (available.Count <= 0)
+        {
+            return 0;
+        }
+        return available[random.Next(0, available.Count)];
     }
 
     private string getRandomSeed()
