@@ -55,6 +55,8 @@
   <ItemGroup>
      <Compile Include="Assets\Scripts\ArrayLayout.cs" />
      <Compile Include="Assets\Scripts\Match3.cs" />
+     <Compile Include="Assets\Scripts\MovePieces.cs" />
+     <Compile Include="Assets\Scripts\NodePiece.cs" />
      <Compile Include="Assets\Scripts\Point.cs" />
  <Reference Include="Unity.Timeline.Editor">
  <HintPath>/Users/macbook/unity/MatchGame/Library/ScriptAssemblies/Unity.Timeline.Editor.dll</HintPath>
