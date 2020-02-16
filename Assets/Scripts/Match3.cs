@@ -12,6 +12,7 @@ public class Match3 : MonoBehaviour
     public GameObject nodePiece;
     List<NodePiece> update;
     List<FlippedPieces> flipped;
+    List<NodePiece> dead;
 
 
     Node[,] board;
@@ -33,6 +34,7 @@ public class Match3 : MonoBehaviour
         random = new System.Random(seed.GetHashCode());
         update = new List<NodePiece>();
         flipped = new List<FlippedPieces>();
+        dead = new List<NodePiece>();
         InitializeBoard();
         VerifyBoard();
         InstantiateBoard();
@@ -76,12 +78,77 @@ public class Match3 : MonoBehaviour
                     Node node = getNodeAtPoint(pnt);
                     NodePiece nodePiece = node.GetPiece();
                     if (nodePiece != null)
+                    {
                         nodePiece.gameObject.SetActive(false);
+                        dead.Add(piece);
+                    }
                     node.SetPiece(null);
                 }
+                ApplyGravityToBoard();
             }
             flipped.Remove(flip);// remove the flip after update 
             update.Remove(piece);
+        }
+    }
+
+    void ApplyGravityToBoard()
+    {
+        for (int x = 0; x < width; x++)
+        {
+            for (int y = (height - 1); y >= 0; y--)
+            {
+                Point p = new Point(x, y);
+                Node node = getNodeAtPoint(p);
+                int val = getValueAtPoint(p);
+                if (val != 0) continue; // if it is not a hole do nothing
+                for (int ny = (y - 1); ny >= -1; ny--)
+                {
+                    Point next = new Point(x, ny);
+                    int nextVal = getValueAtPoint(next);
+                    if (nextVal == 0) continue;
+                    if (nextVal != -1) //if we did not hit an end, but its not 0 then use this to fill the hole
+                    {
+                        Node got = getNodeAtPoint(next);
+                        NodePiece piece = got.GetPiece();
+                        //set the hole
+                        node.SetPiece(piece);
+                        update.Add(piece);
+                        //replace the hole
+                        got.SetPiece(null);
+                    }
+                    else//hit an end
+                    {
+                        // fill the hole
+                        int newVal = fillPieces();
+                        NodePiece piece;
+                        if (dead.Count > 0)
+                        {
+                            NodePiece revived = dead[0];
+                            revived.gameObject.SetActive(true);
+                            revived.rect.anchoredPosition = getPositionFromPoint(new Point(x, -1));
+                            piece = revived;
+
+                            dead.RemoveAt(0);
+                        }
+                        else
+                        {
+                            GameObject obj = Instantiate(nodePiece, gameBoard);
+                            NodePiece n = obj.GetComponent<NodePiece>();
+                            RectTransform rect = obj.GetComponent<RectTransform>();
+                            rect.anchoredPosition = getPositionFromPoint(new Point(x, -1));
+                            piece = n;
+
+                        }
+                        piece.Initialize(newVal, p, pieces[newVal - 1]);
+
+                        Node hole = getNodeAtPoint(p);
+                        hole.SetPiece(piece);
+                        ResetPiece(piece);
+                    }
+                    break;
+                }
+
+            }
         }
     }
 
