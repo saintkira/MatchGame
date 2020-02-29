@@ -54,6 +54,7 @@
   </ItemGroup>
   <ItemGroup>
      <Compile Include="Assets\Scripts\ArrayLayout.cs" />
+     <Compile Include="Assets\Scripts\KilledPiece.cs" />
      <Compile Include="Assets\Scripts\Match3.cs" />
      <Compile Include="Assets\Scripts\MovePieces.cs" />
      <Compile Include="Assets\Scripts\NodePiece.cs" />

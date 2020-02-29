@@ -4,20 +4,25 @@ using UnityEngine;
 
 public class Match3 : MonoBehaviour
 {
+
     public ArrayLayout boardLayout;
     [Header("UI Elements")]
     public Sprite[] pieces;
     public RectTransform gameBoard;
+    public RectTransform killedBoard;
     [Header("Prefabs")]
     public GameObject nodePiece;
+    public GameObject killedPiece;
     List<NodePiece> update;
     List<FlippedPieces> flipped;
     List<NodePiece> dead;
+    List<KilledPiece> killed;
 
 
     Node[,] board;
     int width = 9;
     int height = 14;
+    int[] fills;
     System.Random random;
 
 
@@ -30,11 +35,13 @@ public class Match3 : MonoBehaviour
 
     void StartGame()
     {
+        fills = new int[width];
         string seed = getRandomSeed();
         random = new System.Random(seed.GetHashCode());
         update = new List<NodePiece>();
         flipped = new List<FlippedPieces>();
         dead = new List<NodePiece>();
+        killed = new List<KilledPiece>();
         InitializeBoard();
         VerifyBoard();
         InstantiateBoard();
@@ -57,6 +64,9 @@ public class Match3 : MonoBehaviour
             FlippedPieces flip = getFlipped(piece);
             NodePiece flippedPiece = null;
 
+            int x = (int)piece.index.x;
+            fills[x] = Mathf.Clamp(fills[x] - 1, 0, width);
+
             List<Point> connected = isConnected(piece.index, true);
             bool wasFlipped = (flip != null);
 
@@ -75,12 +85,13 @@ public class Match3 : MonoBehaviour
             {
                 foreach (Point pnt in connected)// remove node pieces when connected
                 {
+                    KillPiece(pnt);
                     Node node = getNodeAtPoint(pnt);
                     NodePiece nodePiece = node.GetPiece();
                     if (nodePiece != null)
                     {
                         nodePiece.gameObject.SetActive(false);
-                        dead.Add(piece);
+                        dead.Add(nodePiece);
                     }
                     node.SetPiece(null);
                 }
@@ -121,11 +132,11 @@ public class Match3 : MonoBehaviour
                         // fill the hole
                         int newVal = fillPieces();
                         NodePiece piece;
+                        Point fallPnt = new Point(x, (-1 - fills[x]));
                         if (dead.Count > 0)
                         {
                             NodePiece revived = dead[0];
-                            revived.gameObject.SetActive(true);
-                            revived.rect.anchoredPosition = getPositionFromPoint(new Point(x, -1));
+                            revived.gameObject.SetActive(true);                            
                             piece = revived;
 
                             dead.RemoveAt(0);
@@ -134,17 +145,17 @@ public class Match3 : MonoBehaviour
                         {
                             GameObject obj = Instantiate(nodePiece, gameBoard);
                             NodePiece n = obj.GetComponent<NodePiece>();
-                            RectTransform rect = obj.GetComponent<RectTransform>();
-                            rect.anchoredPosition = getPositionFromPoint(new Point(x, -1));
                             piece = n;
 
                         }
                         piece.Initialize(newVal, p, pieces[newVal - 1]);
-
+                        piece.rect.anchoredPosition = getPositionFromPoint(fallPnt);
                         Node hole = getNodeAtPoint(p);
                         hole.SetPiece(piece);
                         ResetPiece(piece);
+                        fills[x]++;
                     }
+
                     break;
                 }
 
@@ -331,7 +342,6 @@ public class Match3 : MonoBehaviour
             }
         }
 
-
         return connected;
     }
 
@@ -430,6 +440,28 @@ public class Match3 : MonoBehaviour
         }
         else
             ResetPiece(pieceOne);
+
+    }
+
+    void KillPiece(Point p)
+    {
+        List<KilledPiece> available = new List<KilledPiece>();
+        for (int i = 0; i < killed.Count; i++)
+            if (!killed[i].falling) available.Add(killed[i]);
+
+        KilledPiece set = null;
+        if (available.Count > 0)
+            set = available[0];
+        else
+        {
+            GameObject kill = GameObject.Instantiate(killedPiece, killedBoard);
+            KilledPiece kPiece = kill.GetComponent<KilledPiece>();
+            set = kPiece;
+            killed.Add(kPiece);
+        }
+        int val = getValueAtPoint(p) - 1;
+        if (set != null && val >= 0 && val < pieces.Length)
+            set.Initialize(pieces[val], getPositionFromPoint(p));
 
     }
     public Vector2 getPositionFromPoint(Point p)
