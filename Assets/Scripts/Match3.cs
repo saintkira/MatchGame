@@ -1,10 +1,16 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class Match3 : MonoBehaviour
 {
 
+    public Timer timer;
+    public Text timerTxt, scoreTxt;
+    //public float score;
+    //private float currentTime = 0f;
+    private float endTime = 10f;
     public ArrayLayout boardLayout;
     [Header("UI Elements")]
     public Sprite[] pieces;
@@ -33,8 +39,14 @@ public class Match3 : MonoBehaviour
         StartGame();
     }
 
+
+
     void StartGame()
     {
+
+        ScoreModel.Instance.ResetScore();
+        timer = new Timer(OnGameOver, endTime);
+        timer.StartTimer(this);
         fills = new int[width];
         string seed = getRandomSeed();
         random = new System.Random(seed.GetHashCode());
@@ -85,6 +97,8 @@ public class Match3 : MonoBehaviour
             {
                 foreach (Point pnt in connected)// remove node pieces when connected
                 {
+                    //score += 1;
+                    ScoreModel.Instance.AddScore(1);
                     KillPiece(pnt);
                     Node node = getNodeAtPoint(pnt);
                     NodePiece nodePiece = node.GetPiece();
@@ -100,6 +114,20 @@ public class Match3 : MonoBehaviour
             flipped.Remove(flip);// remove the flip after update 
             update.Remove(piece);
         }
+        scoreTxt.text = "SCORE : " + ScoreModel.Instance.Score.ToString();
+        // update timer
+        timerTxt.text = "TIMER : " + timer.Time.ToString("0");
+        //timer.Update();
+
+    }
+
+    void OnGameOver()
+    {
+        MessagePopup.Instance.Show(() =>
+        {
+            Loader.LoadScene(Loader.SceneList.Score);
+
+        });
     }
 
     void ApplyGravityToBoard()
@@ -136,7 +164,7 @@ public class Match3 : MonoBehaviour
                         if (dead.Count > 0)
                         {
                             NodePiece revived = dead[0];
-                            revived.gameObject.SetActive(true);                            
+                            revived.gameObject.SetActive(true);
                             piece = revived;
 
                             dead.RemoveAt(0);
