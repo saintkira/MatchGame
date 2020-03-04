@@ -45,7 +45,7 @@ public class Match3 : MonoBehaviour
     {
 
         ScoreModel.Instance.ResetScore();
-        timer = new Timer(OnGameOver, endTime);
+        timer = new Timer(OnGameOver, 10f);
         timer.StartTimer(this);
         fills = new int[width];
         string seed = getRandomSeed();

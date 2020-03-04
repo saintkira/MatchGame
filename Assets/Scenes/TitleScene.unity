@@ -460,6 +460,7 @@ MonoBehaviour:
   logo: {fileID: 907907578}
   logoBegin: {x: 0, y: 500, z: 0}
   logoEnd: {x: 0, y: -337.4, z: 0}
+  logoRotate: {x: 0, y: 333, z: 0}
 --- !u!1 &993713766
 GameObject:
   m_ObjectHideFlags: 0
